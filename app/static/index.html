@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WikiLens — Smart Wikipedia Search</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔍</text></svg>">
+</head>
+<body>
+  <!-- Background Ambient Glow -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+
+  <!-- Top Navigation / Header -->
+  <header class="app-header" id="appHeader">
+    <div class="header-inner">
+      <div class="logo-container" id="logoBtn" role="button" tabindex="0" title="Return to home">
+        <div class="logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="brand-name">Wiki<span class="gradient-text">Lens</span></span>
+          <span class="brand-tag">Smart Wikipedia Search</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="corpus-stats" id="corpusStats">
+          <span class="stat-badge"><span class="pulse-dot"></span> 25,000 Articles</span>
+          <span class="stat-badge subtle">BM25 + Trigram</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-container">
+    <!-- Hero / Search Section -->
+    <section class="search-section" id="searchSection">
+      <div class="hero-title-group" id="heroTitle">
+        <div class="hero-badge">
+          <span class="badge-icon">⚡</span> Sub-millisecond Wikipedia Search
+        </div>
+        <h1>Discover Knowledge with <span class="gradient-text">Precision</span></h1>
+        <p class="hero-subtitle">Fast keyword-based search with BM25 relevance ranking, typo-tolerant fuzzy matching, and instant infobox facts.</p>
+      </div>
+
+      <!-- Search Box with Autocomplete -->
+      <div class="search-box-wrapper">
+        <div class="search-input-box" id="searchInputBox">
+          <span class="search-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </span>
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="Search Wikipedia articles, titles, or concepts..." 
+            autocomplete="off" 
+            spellcheck="false"
+          />
+          <div class="search-kbd-hint" id="kbdHint" title="Press '/' to search">/</div>
+          <button id="clearBtn" class="clear-btn hidden" title="Clear input">✕</button>
+          <button id="searchBtn" class="search-btn">
+            <span>Search</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Autocomplete Dropdown -->
+        <div class="autocomplete-dropdown hidden" id="autocompleteDropdown"></div>
+      </div>
+
+      <!-- Sample Query Chips -->
+      <div class="quick-chips" id="quickChips">
+        <span class="chips-label">Popular queries:</span>
+        <button class="chip" data-query="Chubasco">🌪️ Chubasco</button>
+        <button class="chip" data-query="Australian rules footballer">🏉 Australian rules footballer</button>
+        <button class="chip" data-query="mountain pass South Africa">⛰️ mountain pass South Africa</button>
+        <button class="chip chip-typo" data-query="Chubascco" title="Tests fuzzy matching">🔍 Chubascco <span class="typo-pill">typo</span></button>
+        <button class="chip chip-typo" data-query="Doringeck" title="Tests fuzzy matching">🔍 Doringeck <span class="typo-pill">typo</span></button>
+      </div>
+    </section>
+
+    <!-- Did You Mean Banner -->
+    <div class="did-you-mean-bar hidden" id="didYouMeanBar">
+      <span class="did-you-mean-icon">💡</span>
+      <span class="did-you-mean-text">Did you mean:</span>
+      <button class="did-you-mean-btn" id="didYouMeanBtn"></button>
+    </div>
+
+    <!-- Search Meta & Results Header -->
+    <div class="results-meta hidden" id="resultsMeta">
+      <div class="meta-left">
+        <span id="resultsCount" class="results-count-text">0 results</span>
+        <span class="meta-sep">•</span>
+        <span id="searchLatency" class="latency-badge">0ms</span>
+      </div>
+      <div class="meta-right">
+        <label class="toggle-container" title="Fallback to fuzzy match if exact search returns no results">
+          <input type="checkbox" id="fuzzyToggle" checked>
+          <span class="toggle-switch"></span>
+          <span class="toggle-label">Fuzzy Typo Fallback</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Results Container -->
+    <section class="results-container" id="resultsContainer"></section>
+
+    <!-- Pagination -->
+    <div class="pagination-bar hidden" id="paginationBar">
+      <button id="prevPageBtn" class="page-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Previous
+      </button>
+      <span id="pageIndicator" class="page-indicator">Page 1 of 1</span>
+      <button id="nextPageBtn" class="page-btn">
+        Next
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+    </div>
+  </main>
+
+  <!-- Quick View Facts Modal -->
+  <div class="modal-overlay hidden" id="articleModal" role="dialog" aria-modal="true" aria-labelledby="modalArticleName">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-pill-tag">Article Preview</div>
+          <h2 id="modalArticleName">Article Title</h2>
+          <p id="modalArticleDesc" class="modal-desc"></p>
+        </div>
+        <button class="modal-close-btn" id="modalCloseBtn" aria-label="Close dialog">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-left">
+          <div class="modal-img-wrap" id="modalImgWrap">
+            <img id="modalImg" src="" alt="Article image" loading="lazy">
+          </div>
+          <div class="modal-section-box">
+            <div class="section-box-header">
+              <span class="box-icon">📊</span>
+              <h3>Structured Facts</h3>
+            </div>
+            <div id="modalFactsList" class="facts-grid"></div>
+          </div>
+        </div>
+
+        <div class="modal-right">
+          <div class="modal-section-box">
+            <div class="section-box-header">
+              <span class="box-icon">📖</span>
+              <h3>Summary Abstract</h3>
+            </div>
+            <p id="modalAbstract" class="modal-abstract-text"></p>
+          </div>
+
+          <div class="modal-meta-box">
+            <div class="meta-item">
+              <span class="meta-k">Last Modified</span>
+              <span class="meta-v" id="modalDateMod">-</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-k">Character Count</span>
+              <span class="meta-v" id="modalChars">-</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-k">Live Article</span>
+              <a id="modalWikiLink" href="#" target="_blank" rel="noopener noreferrer" class="wiki-external-link">
+                View on Wikipedia
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <span>WikiLens Search Engine &bull; Powered by SQLite FTS5 &amp; BM25</span>
+      <span class="footer-meta">25,000 Verified Wikipedia Articles</span>
+    </div>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
